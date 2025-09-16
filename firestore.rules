@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ユーザーコレクション
+    match /users/{userId} {
+      // 自分のプロフィールのみ読み書き可能
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // 他のユーザーのプロフィールは読み取りのみ（認証済み）
+      allow read: if request.auth != null;
+      // displayName重複チェックのため、displayNameLowerフィールドを限定的に読み取り可能
+      allow read: if request.auth == null && resource != null;
+    }
+
+
+    // 記事コレクション
+    match /articles/{articleId} {
+      // 公開記事は誰でも読める（ログイン不要）
+      allow read: if resource.data.status == 'published';
+      // 自分の記事（非公開含む）は読める
+      allow read: if request.auth != null && request.auth.uid == resource.data.authorId;
+      // 認証済みユーザーは記事作成可能
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.authorId;
+      // 自分の記事のみ更新・削除可能
+      allow update, delete: if request.auth != null &&
+        request.auth.uid == resource.data.authorId;
+      // 認証済みユーザーはいいね数・コメント数の更新が可能（likesCountまたはcommentsCountフィールドのみ）
+      allow update: if request.auth != null &&
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['likesCount']) ||
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['commentsCount']));
+    }
+
+    // コメントコレクション
+    match /comments/{commentId} {
+      // 公開記事のコメントは誰でも読める
+      allow read: if true;
+      // 認証済みユーザーはコメント作成可能
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.authorId;
+      // 自分のコメントのみ更新・削除可能
+      allow update, delete: if request.auth != null &&
+        request.auth.uid == resource.data.authorId;
+    }
+
+    // いいねコレクション
+    match /likes/{likeId} {
+      // 認証済みユーザーは自分のいいねを読み取り可能（存在しない場合も含む）
+      allow read: if request.auth != null;
+      // 認証済みユーザーは自分のいいねを作成可能
+      allow create: if request.auth != null &&
+        request.auth.uid == request.resource.data.userId;
+      // 認証済みユーザーは自分のいいねを削除可能
+      allow delete: if request.auth != null &&
+        request.auth.uid == resource.data.userId;
+    }
+
+    // カテゴリコレクション
+    match /categories/{categoryId} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // 管理者のみ作成・更新・削除可能
+      allow create, update, delete: if request.auth != null &&
+        request.auth.token.email == 'nextoda@gmail.com';
+    }
+
+    // タグコレクション（読み取りのみ）
+    match /tags/{tagId} {
+      allow read: if true;
+    }
+  }
+}

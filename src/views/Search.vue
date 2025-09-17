@@ -27,10 +27,17 @@
             class="form-control"
           >
             <option value="">すべてのカテゴリ</option>
-            <option value="技術">技術</option>
-            <option value="プログラミング">プログラミング</option>
-            <option value="デザイン">デザイン</option>
-            <option value="その他">その他</option>
+            <option
+              v-for="category in categories"
+              :key="category.id"
+              :value="category.name"
+            >
+              {{ category.name }}
+            </option>
+            <!-- デバッグ用：カテゴリが読み込まれていない場合の表示 -->
+            <option v-if="categories.length === 0" disabled>
+              カテゴリを読み込み中...
+            </option>
           </select>
         </div>
 
@@ -132,6 +139,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useArticlesStore } from '@/stores/articles'
+import { DatabaseService } from '@/services/database'
 
 const route = useRoute()
 const router = useRouter()
@@ -147,6 +155,7 @@ const searchResults = ref([])
 const loading = ref(false)
 const error = ref(null)
 const hasSearched = ref(false)
+const categories = ref([])
 
 const formatDate = (timestamp) => {
   if (!timestamp) return ''
@@ -221,9 +230,24 @@ const clearFilters = () => {
 }
 
 // URLパラメータから検索条件を復元
+const loadCategories = async () => {
+  try {
+    console.log('🔍 Search.vue: カテゴリ取得開始')
+    categories.value = await DatabaseService.getCategories()
+    console.log('✅ Search.vue: カテゴリ取得完了:', categories.value.length, '件')
+    console.log('📋 Search.vue: カテゴリ詳細:', categories.value)
+
+    if (categories.value.length === 0) {
+      console.warn('⚠️ Search.vue: カテゴリが0件です。Firestoreのcategoriesコレクションを確認してください')
+    }
+  } catch (error) {
+    console.error('❌ Search.vue: カテゴリ取得エラー:', error)
+  }
+}
+
 const restoreSearchFromQuery = () => {
   const query = route.query
-  
+
   if (query.q) searchForm.value.text = query.q
   if (query.category) searchForm.value.category = query.category
   if (query.tags) searchForm.value.tags = query.tags
@@ -234,8 +258,20 @@ const restoreSearchFromQuery = () => {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  console.log('🚀 Search.vue: onMounted開始')
+  // カテゴリ一覧を取得
+  await loadCategories()
+  // クエリパラメータから検索条件を復元
   restoreSearchFromQuery()
+  console.log('🏁 Search.vue: onMounted完了')
+
+  // デバッグ用グローバル関数
+  window.debugSearchCategories = () => {
+    console.log('📊 Debug: categories.value:', categories.value)
+    console.log('📊 Debug: categories.value.length:', categories.value.length)
+    return categories.value
+  }
 })
 </script>
 
@@ -444,16 +480,38 @@ onMounted(() => {
   .search-input-group {
     flex-direction: column;
   }
-  
+
   .search-filters {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
-  
+
   .article-footer {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
+  }
+
+  /* モバイルでのselectボックス最適化 */
+  select.form-control {
+    min-height: 48px;
+    font-size: 16px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+
+  select.form-control option {
+    padding: 12px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: white;
+    color: #333;
   }
 }
 </style>

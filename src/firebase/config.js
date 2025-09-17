@@ -19,6 +19,15 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const githubProvider = new GithubAuthProvider();
 
+// Google認証プロバイダの設定
+googleProvider.addScope('email');
+googleProvider.addScope('profile');
+
+// カスタムパラメータでモバイル最適化
+googleProvider.setCustomParameters({
+  prompt: 'select_account'
+});
+
 // Firestore設定
 export const db = getFirestore(app);
 

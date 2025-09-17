@@ -24,6 +24,24 @@ input, textarea, [contenteditable] {
   user-select: text;
 }
 
+/* モバイルでのselectボックス最適化 */
+@media (max-width: 768px) {
+  select {
+    font-size: 16px !important;
+    min-height: 48px !important;
+    padding: 12px 16px !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+  }
+
+  select option {
+    padding: 12px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;

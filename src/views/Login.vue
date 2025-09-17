@@ -333,10 +333,25 @@ const handleSubmit = async () => {
 const handleGoogleLogin = async () => {
   try {
     authStore.clearError()
-    await authStore.signInWithGoogle()
-    router.push('/')
+    console.log('🔍 Login.vue: Google認証開始')
+
+    const result = await authStore.signInWithGoogle()
+
+    // リダイレクト方式を使用した場合
+    if (result === 'redirecting') {
+      console.log('🔄 Login.vue: リダイレクト認証開始')
+      // リダイレクトが始まるため、この後の処理は実行されない
+      return
+    }
+
+    // ポップアップ方式で成功した場合
+    if (result && result.uid) {
+      console.log('✅ Login.vue: Google認証成功、ホームへリダイレクト')
+      router.push('/')
+    }
   } catch (error) {
-    // エラーはstoreで処理済み
+    console.error('❌ Login.vue: Google認証エラー:', error)
+    alert(`Google認証エラー: ${error.message}`)
   }
 }
 

@@ -2,6 +2,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   updateProfile,
@@ -14,6 +16,33 @@ import { auth, googleProvider, githubProvider, db } from '@/firebase/config'
 import { DatabaseService } from '@/services/database'
 
 export class AuthService {
+  // モバイルデバイスの検出
+  static isMobileDevice() {
+    // より包括的なモバイル検出
+    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+
+    // スマートフォン・タブレットの検出
+    const mobileRegex = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS|FxiOS/i;
+
+    // タッチデバイスかつ小さい画面の場合もモバイルとして扱う
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isSmallScreen = window.screen.width <= 768 || window.innerWidth <= 768;
+
+    const isMobile = mobileRegex.test(userAgent) || (isTouchDevice && isSmallScreen);
+
+    console.log('🔍 モバイル検出詳細:', {
+      userAgent,
+      regexMatch: mobileRegex.test(userAgent),
+      isTouchDevice,
+      screenWidth: window.screen.width,
+      innerWidth: window.innerWidth,
+      isSmallScreen,
+      finalResult: isMobile
+    });
+
+    return isMobile;
+  }
+
   static async signInWithEmail(email, password) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password)
@@ -103,14 +132,58 @@ export class AuthService {
 
   static async signInWithGoogle() {
     try {
-      const userCredential = await signInWithPopup(auth, googleProvider)
-      const user = userCredential.user
-      
-      // 初回ログインの場合、Firestoreにユーザー情報を保存
-      await this.createUserDocument(user)
-      
-      return user
+      console.log('🔍 AuthService: Google認証開始')
+      console.log('📱 モバイルデバイス:', this.isMobileDevice())
+      console.log('🌐 User Agent:', navigator.userAgent)
+
+      // モバイルデバイスの場合は最初からリダイレクト方式を使用
+      if (this.isMobileDevice()) {
+        console.log('📱 AuthService: モバイルデバイス検出 - リダイレクト方式を使用')
+        try {
+          await signInWithRedirect(auth, googleProvider)
+          return 'redirecting'
+        } catch (redirectError) {
+          console.error('❌ AuthService: リダイレクト認証失敗:', redirectError)
+          throw new Error(this.getGoogleErrorMessage(redirectError))
+        }
+      } else {
+        // デスクトップの場合はポップアップ方式を使用
+        console.log('🖥️ AuthService: デスクトップデバイス - ポップアップ方式を使用')
+        const userCredential = await signInWithPopup(auth, googleProvider)
+        const user = userCredential.user
+
+        console.log('✅ AuthService: ポップアップ認証成功:', user.email)
+
+        // 初回ログインの場合、Firestoreにユーザー情報を保存
+        await this.createUserDocument(user)
+
+        return user
+      }
     } catch (error) {
+      console.error('❌ AuthService: Google認証エラー:', error.code, error.message)
+      throw new Error(this.getGoogleErrorMessage(error))
+    }
+  }
+
+  // リダイレクト結果の処理（モバイル用）
+  static async handleRedirectResult() {
+    try {
+      console.log('🔍 AuthService: リダイレクト結果確認開始')
+      const result = await getRedirectResult(auth)
+
+      if (result && result.user) {
+        console.log('✅ AuthService: リダイレクト認証成功:', result.user.email)
+
+        // 初回ログインの場合、Firestoreにユーザー情報を保存
+        await this.createUserDocument(result.user)
+
+        return result.user
+      } else {
+        console.log('ℹ️ AuthService: リダイレクト結果なし')
+        return null
+      }
+    } catch (error) {
+      console.error('❌ AuthService: リダイレクト結果処理エラー:', error)
       throw new Error(this.getErrorMessage(error.code))
     }
   }
@@ -322,6 +395,31 @@ export class AuthService {
     const fallback = `${baseDisplayName}_${timestamp}`
     console.log('generateUniqueDisplayName: 時刻付与フォールバック', fallback)
     return fallback
+  }
+
+  static getGoogleErrorMessage(error) {
+    console.log('🔍 AuthService: Google認証詳細エラー情報:')
+    console.log('- エラーコード:', error.code)
+    console.log('- エラーメッセージ:', error.message)
+    console.log('- エラースタック:', error.stack)
+    console.log('- カスタムデータ:', error.customData)
+
+    switch (error.code) {
+      case 'auth/popup-blocked':
+        return 'ポップアップがブロックされました。ポップアップを許可してください。'
+      case 'auth/popup-closed-by-user':
+        return 'ポップアップが閉じられました。'
+      case 'auth/cancelled-popup-request':
+        return 'ポップアップリクエストがキャンセルされました。'
+      case 'auth/network-request-failed':
+        return 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
+      case 'auth/internal-error':
+        return '内部エラーが発生しました。時間をおいて再度お試しください。'
+      case 'auth/unauthorized-domain':
+        return '認証ドメインが許可されていません。'
+      default:
+        return error.message || 'Google認証でエラーが発生しました。'
+    }
   }
 
   static getErrorMessage(errorCode) {

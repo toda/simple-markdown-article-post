@@ -608,23 +608,45 @@ onMounted(async () => {
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .editor-container {
     grid-template-columns: 1fr;
   }
-  
+
   .form-actions {
     flex-direction: column;
     gap: 1rem;
   }
-  
+
   .buttons-group {
     width: 100%;
     justify-content: stretch;
   }
-  
+
   .buttons-group .btn {
     flex: 1;
+  }
+
+  /* モバイルでのselectボックス最適化 */
+  select.form-control {
+    min-height: 48px;
+    font-size: 16px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.5em 1.5em;
+    padding-right: 2.5rem;
+  }
+
+  select.form-control option {
+    padding: 12px 16px;
+    font-size: 16px;
+    line-height: 1.5;
+    background-color: white;
+    color: #333;
   }
 }
 </style>

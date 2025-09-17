@@ -281,6 +281,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  const sendPasswordResetEmail = async (email) => {
+    try {
+      error.value = null
+      console.log('🔐 AuthStore: パスワードリセットメール送信開始:', email)
+      await AuthService.sendPasswordResetEmail(email)
+      console.log('✅ AuthStore: パスワードリセットメール送信完了')
+    } catch (err) {
+      console.error('❌ AuthStore: パスワードリセットメール送信エラー:', err)
+      error.value = err.message
+      throw err
+    }
+  }
+
   const checkEmailVerificationStatus = async () => {
     try {
       error.value = null
@@ -452,6 +465,7 @@ export const useAuthStore = defineStore('auth', () => {
     signOut,
     updateUserProfile,
     sendEmailVerification,
+    sendPasswordResetEmail,
     checkEmailVerificationStatus,
     setupVerificationCheck,
     clearError

@@ -1,5 +1,5 @@
 <template>
-  <div id="app">
+  <div id="app" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
     <nav class="navbar">
       <div class="navbar-top">
         <div class="nav-brand">
@@ -14,7 +14,7 @@
         </button>
 
         <!-- ナビゲーションリンク -->
-        <div class="nav-links" :class="{ 'mobile-open': isMobileMenuOpen }">
+        <div class="nav-links" :class="{ 'mobile-open': isMobileMenuOpen }" @touchstart.stop @touchmove.stop>
           <router-link to="/" @click="closeMobileMenu">ホーム</router-link>
           <router-link to="/search" @click="closeMobileMenu">検索</router-link>
           <router-link v-if="authStore.isAuthenticated" to="/create" @click="closeMobileMenu">記事作成</router-link>
@@ -55,6 +55,59 @@ const isMobileMenuOpen = ref(false)
 
 const toggleMobileMenu = () => {
   isMobileMenuOpen.value = !isMobileMenuOpen.value
+}
+
+// スワイプによる意図しない開閉を防ぐ
+let startX = 0
+let startY = 0
+let isSwipe = false
+
+const handleTouchStart = (e) => {
+  // ハンバーガーメニューボタンのタッチは許可
+  if (e.target.closest('.mobile-menu-toggle')) {
+    return
+  }
+
+  startX = e.touches[0].clientX
+  startY = e.touches[0].clientY
+  isSwipe = false
+}
+
+const handleTouchMove = (e) => {
+  // ハンバーガーメニューボタンのタッチは許可
+  if (e.target.closest('.mobile-menu-toggle')) {
+    return
+  }
+
+  if (!startX || !startY) return
+
+  const deltaX = Math.abs(e.touches[0].clientX - startX)
+  const deltaY = Math.abs(e.touches[0].clientY - startY)
+
+  // 横スワイプを検出
+  if (deltaX > 10 && deltaX > deltaY) {
+    isSwipe = true
+    // メニューが開いている場合は閉じる
+    if (isMobileMenuOpen.value) {
+      closeMobileMenu()
+    }
+  }
+}
+
+const handleTouchEnd = (e) => {
+  // ハンバーガーメニューボタンのタッチは許可
+  if (e.target.closest('.mobile-menu-toggle')) {
+    return
+  }
+
+  // スワイプでメニューが開かないようにする
+  if (isSwipe) {
+    e.preventDefault()
+    e.stopPropagation()
+  }
+  startX = 0
+  startY = 0
+  isSwipe = false
 }
 
 const closeMobileMenu = () => {
@@ -111,6 +164,9 @@ const handleSignOut = async () => {
   top: 0;
   z-index: 1000;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  touch-action: pan-y;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
 }
 
 .navbar-top {
@@ -141,6 +197,7 @@ const handleSignOut = async () => {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  touch-action: manipulation;
 }
 
 .nav-links a {
@@ -242,6 +299,9 @@ const handleSignOut = async () => {
   align-items: center;
   width: 30px;
   height: 30px;
+  touch-action: manipulation;
+  -webkit-touch-callout: auto;
+  -webkit-user-drag: auto;
   background: transparent;
   border: none;
   cursor: pointer;
@@ -299,6 +359,7 @@ const handleSignOut = async () => {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
+  touch-action: manipulation;
 }
 
 /* レスポンシブ対応 */

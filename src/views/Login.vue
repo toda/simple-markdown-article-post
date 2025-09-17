@@ -798,4 +798,29 @@ onMounted(() => {
   background-color: #007bff;
   color: white;
 }
+
+/* スマートフォン向けレスポンシブ対応 */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1rem;
+  }
+
+  .login-card {
+    max-width: 90%;
+    min-width: 320px;
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 0.75rem;
+  }
+
+  .login-card {
+    max-width: 95%;
+    min-width: 300px;
+    padding: 1.25rem;
+  }
+}
 </style>

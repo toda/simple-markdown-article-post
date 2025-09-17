@@ -51,7 +51,7 @@
 
       <!-- アイキャッチ画像アップロード -->
       <div class="form-group">
-        <label class="form-label">アイキャッチ画像</label>
+        <label class="form-label">画像アップロード</label>
         <div class="image-upload-area">
           <input
             ref="imageInput"
@@ -70,7 +70,7 @@
           <div v-else class="image-preview">
             <img
               :src="imagePreview || formData.featuredImage"
-              alt="アイキャッチ画像"
+              alt="アップロード画像"
               class="preview-image"
             />
             <div class="image-actions">
@@ -556,11 +556,13 @@ onMounted(async () => {
 }
 
 .preview-image {
-  width: 100%;
+  max-width: 100%;
   max-height: 300px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: block;
+  margin: 0 auto;
 }
 
 .image-actions {

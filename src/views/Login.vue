@@ -1,8 +1,53 @@
 <template>
   <div class="login-container">
     <div class="login-card">
+      <!-- パスワードリセット画面 -->
+      <div v-if="showPasswordReset" class="password-reset">
+        <h1 class="login-title">パスワードリセット</h1>
+
+        <div v-if="passwordResetSent" class="reset-success">
+          <div class="success-icon">✅</div>
+          <p><strong>パスワードリセットメールを送信しました！</strong></p>
+          <p>{{ resetEmail }} にメールを送信しました。</p>
+          <p>メール内のリンクをクリックしてパスワードをリセットしてください。</p>
+          <p class="note">まもなくログイン画面に戻ります...</p>
+        </div>
+
+        <div v-else class="reset-form">
+          <p>登録したメールアドレスを入力してください。パスワードリセット用のメールをお送りします。</p>
+
+          <form @submit.prevent="handlePasswordReset" class="password-reset-form">
+            <div class="form-group">
+              <label for="resetEmail" class="form-label">メールアドレス</label>
+              <input
+                id="resetEmail"
+                v-model="resetEmail"
+                type="email"
+                class="form-control"
+                required
+                placeholder="example@domain.com"
+              />
+            </div>
+
+            <button
+              type="submit"
+              class="btn btn-primary btn-full"
+              :disabled="sendingPasswordReset"
+            >
+              {{ sendingPasswordReset ? '送信中...' : 'パスワードリセットメールを送信' }}
+            </button>
+          </form>
+
+          <div class="reset-actions">
+            <button @click="showPasswordReset = false" class="btn btn-outline">
+              ログイン画面に戻る
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- メール認証画面 -->
-      <div v-if="showEmailVerification" class="email-verification">
+      <div v-else-if="showEmailVerification" class="email-verification">
         <h1 class="login-title">{{ verificationCompleted ? 'メール認証完了' : 'メール認証' }}</h1>
 
         <!-- 認証完了メッセージ -->
@@ -100,6 +145,12 @@
         </button>
       </form>
 
+      <div v-if="!isSignUp" class="password-reset-link">
+        <button @click="showPasswordReset = true" class="link-button">
+          パスワードを忘れた方はこちら
+        </button>
+      </div>
+
       <div class="divider">または</div>
 
       <div class="social-login">
@@ -150,6 +201,10 @@ const showEmailVerification = ref(false)
 const verificationEmailSent = ref(false)
 const checkingVerificationStatus = ref(false)
 const verificationCompleted = ref(false)
+const showPasswordReset = ref(false)
+const resetEmail = ref('')
+const sendingPasswordReset = ref(false)
+const passwordResetSent = ref(false)
 
 let displayNameCheckTimeout = null
 
@@ -343,16 +398,50 @@ const handleCheckVerificationStatus = async () => {
   }
 }
 
+const handlePasswordReset = async () => {
+  try {
+    if (!resetEmail.value.trim()) {
+      alert('メールアドレスを入力してください')
+      return
+    }
+
+    sendingPasswordReset.value = true
+    console.log('🔐 パスワードリセット開始:', resetEmail.value)
+
+    await authStore.sendPasswordResetEmail(resetEmail.value)
+    passwordResetSent.value = true
+
+    console.log('✅ パスワードリセットメール送信完了')
+    alert(`${resetEmail.value} にパスワードリセットメールを送信しました。メールをご確認ください。`)
+
+    // 成功後はログイン画面に戻る
+    setTimeout(() => {
+      showPasswordReset.value = false
+      passwordResetSent.value = false
+      resetEmail.value = ''
+    }, 2000)
+
+  } catch (error) {
+    console.error('❌ パスワードリセットエラー:', error)
+    alert(`エラー: ${error.message}`)
+  } finally {
+    sendingPasswordReset.value = false
+  }
+}
+
 const toggleMode = () => {
   isSignUp.value = !isSignUp.value
   authStore.clearError()
   showEmailVerification.value = false
   verificationEmailSent.value = false
   verificationCompleted.value = false
+  showPasswordReset.value = false
+  passwordResetSent.value = false
   // フォームをリセット
   email.value = ''
   password.value = ''
   displayName.value = ''
+  resetEmail.value = ''
   // ユーザー名チェック状態もリセット
   displayNameError.value = ''
   displayNameValid.value = false
@@ -614,6 +703,65 @@ onMounted(() => {
 
 .verification-success p:first-of-type {
   font-size: 1.1rem;
+}
+
+.password-reset {
+  text-align: center;
+}
+
+.reset-form {
+  margin: 2rem 0;
+}
+
+.reset-form p {
+  margin-bottom: 1.5rem;
+  color: #495057;
+  line-height: 1.6;
+}
+
+.password-reset-form {
+  margin-bottom: 1.5rem;
+}
+
+.reset-success {
+  margin: 2rem 0;
+  padding: 2rem;
+  background-color: #d4edda;
+  border-radius: 0.5rem;
+  border-left: 4px solid #28a745;
+  text-align: center;
+}
+
+.reset-success .success-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.reset-success p {
+  margin: 0.5rem 0;
+  color: #155724;
+}
+
+.reset-success p:first-of-type {
+  font-size: 1.1rem;
+}
+
+.reset-success .note {
+  font-size: 0.875rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 1rem;
+}
+
+.reset-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+.password-reset-link {
+  text-align: center;
+  margin: 1rem 0;
 }
 
 .verification-actions {

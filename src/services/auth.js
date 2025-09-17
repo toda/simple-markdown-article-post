@@ -6,6 +6,7 @@ import {
   onAuthStateChanged,
   updateProfile,
   sendEmailVerification,
+  sendPasswordResetEmail,
   reload
 } from 'firebase/auth'
 import { doc, setDoc } from 'firebase/firestore'
@@ -153,6 +154,17 @@ export class AuthService {
       await sendEmailVerification(user)
     } catch (error) {
       throw new Error('認証メールの送信に失敗しました')
+    }
+  }
+
+  static async sendPasswordResetEmail(email) {
+    try {
+      console.log('🔐 パスワードリセットメール送信開始:', email)
+      await sendPasswordResetEmail(auth, email)
+      console.log('✅ パスワードリセットメール送信完了')
+    } catch (error) {
+      console.error('❌ パスワードリセットメール送信エラー:', error)
+      throw new Error(this.getPasswordResetErrorMessage(error.code))
     }
   }
 
@@ -327,5 +339,16 @@ export class AuthService {
     }
 
     return errorMessages[errorCode] || 'エラーが発生しました。再度お試しください'
+  }
+
+  static getPasswordResetErrorMessage(errorCode) {
+    const errorMessages = {
+      'auth/user-not-found': '指定されたメールアドレスのユーザーが見つかりません',
+      'auth/invalid-email': 'メールアドレスの形式が正しくありません',
+      'auth/too-many-requests': 'リクエストが多すぎます。しばらく時間をおいてから再度お試しください',
+      'auth/user-disabled': 'このアカウントは無効になっています'
+    }
+
+    return errorMessages[errorCode] || 'パスワードリセットメールの送信に失敗しました。再度お試しください'
   }
 }

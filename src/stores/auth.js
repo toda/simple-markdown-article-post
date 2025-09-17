@@ -41,13 +41,7 @@ export const useAuthStore = defineStore('auth', () => {
   const initAuth = async () => {
     loading.value = true
 
-    // モバイルでのGoogle認証リダイレクト結果をチェック
-    try {
-      console.log('🔍 AuthStore: リダイレクト結果確認中...')
-      await AuthService.handleRedirectResult()
-    } catch (error) {
-      console.error('❌ AuthStore: リダイレクト結果処理エラー:', error)
-    }
+    // リダイレクト方式を廃止したため、リダイレクト結果チェックは不要
 
     return new Promise((resolve) => {
       let initialized = false
@@ -187,14 +181,6 @@ export const useAuthStore = defineStore('auth', () => {
       error.value = null
       loading.value = true
       const authUser = await AuthService.signInWithGoogle()
-
-      // リダイレクト方式の場合は "redirecting" が返される
-      if (authUser === 'redirecting') {
-        console.log('🔄 AuthStore: Google認証リダイレクト開始')
-        // リダイレクトの場合はローディング状態を解除して、リダイレクト完了を待つ
-        loading.value = false
-        return 'redirecting'
-      }
 
       // ポップアップ方式で成功した場合
       if (authUser && authUser.uid) {

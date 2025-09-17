@@ -337,13 +337,6 @@ const handleGoogleLogin = async () => {
 
     const result = await authStore.signInWithGoogle()
 
-    // リダイレクト方式を使用した場合
-    if (result === 'redirecting') {
-      console.log('🔄 Login.vue: リダイレクト認証開始')
-      // リダイレクトが始まるため、この後の処理は実行されない
-      return
-    }
-
     // ポップアップ方式で成功した場合
     if (result && result.uid) {
       console.log('✅ Login.vue: Google認証成功、ホームへリダイレクト')

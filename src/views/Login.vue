@@ -333,18 +333,15 @@ const handleSubmit = async () => {
 const handleGoogleLogin = async () => {
   try {
     authStore.clearError()
-    console.log('🔍 Login.vue: Google認証開始')
-
     const result = await authStore.signInWithGoogle()
 
     // ポップアップ方式で成功した場合
     if (result && result.uid) {
-      console.log('✅ Login.vue: Google認証成功、ホームへリダイレクト')
       router.push('/')
     }
   } catch (error) {
-    console.error('❌ Login.vue: Google認証エラー:', error)
-    alert(`Google認証エラー: ${error.message}`)
+    // authStoreのerrorを使用
+    authStore.error = `Google認証エラー: ${error.message || 'ポップアップが閉じられました。'}`
   }
 }
 

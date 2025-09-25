@@ -107,8 +107,7 @@ export class AuthService {
 
   static async signInWithGoogle() {
     try {
-      // iOS のリダイレクト問題対策: 全デバイスでポップアップ方式を使用
-
+      // ポップアップ方式を使用（iOS/Android両対応）
       const userCredential = await signInWithPopup(auth, googleProvider)
       const user = userCredential.user
 
@@ -332,20 +331,14 @@ export class AuthService {
   }
 
   static getGoogleErrorMessage(error) {
-    console.log('🔍 AuthService: Google認証詳細エラー情報:')
-    console.log('- エラーコード:', error.code)
-    console.log('- エラーメッセージ:', error.message)
-    console.log('- エラースタック:', error.stack)
-    console.log('- カスタムデータ:', error.customData)
-    console.log('- エラー全体:', error)
 
     switch (error.code) {
       case 'auth/popup-blocked':
-        return 'ポップアップがブロックされました。ポップアップを許可してください。'
+        return 'ポップアップがブロックされました。Chromeの設定でこのサイトのポップアップを許可してください。'
       case 'auth/popup-closed-by-user':
-        return 'ポップアップが閉じられました。'
+        return 'Google認証がキャンセルされました。もう一度お試しください。'
       case 'auth/cancelled-popup-request':
-        return 'ポップアップリクエストがキャンセルされました。'
+        return 'Google認証がキャンセルされました。'
       case 'auth/network-request-failed':
         return 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
       case 'auth/internal-error':
